@@ -333,6 +333,7 @@ func (helper *IPHelper) getIPOnline() string {
 
 		if response.StatusCode != http.StatusOK {
 			log.Error(fmt.Sprintf("request %v got httpCode:%v", reqURL, response.StatusCode))
+			response.Body.Close()
 			continue
 		}
 
@@ -346,17 +347,20 @@ func (helper *IPHelper) getIPOnline() string {
 		onlineIP = ipReg.FindString(string(body))
 		if onlineIP == "" {
 			log.Error(fmt.Sprintf("request:%v failed to get online IP", reqURL))
+			response.Body.Close()
 			continue
 		}
 
 		if isIPv4(onlineIP) {
 			if strings.ToUpper(helper.configuration.IPType) != utils.IPV4 {
 				log.Warnf("The online IP (%s) from %s is not IPV6, will skip it.", onlineIP, reqURL)
+				response.Body.Close()
 				continue
 			}
 		} else {
 			if strings.ToUpper(helper.configuration.IPType) != utils.IPV6 {
 				log.Warnf("The online IP (%s) from %s is not IPV4, will skip it.", onlineIP, reqURL)
+				response.Body.Close()
 				continue
 			}
 		}

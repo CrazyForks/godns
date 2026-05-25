@@ -148,9 +148,12 @@ func (manager *DNSManager) startMonitor() {
 		}
 	}()
 
-	// Add a path.
+	// Add a path. If this fails the live-reload feature is degraded for this
+	// session, but it's not fatal — the rest of the app (DNS updates, web
+	// panel) can run fine. The monitor goroutine will idle harmlessly with
+	// no paths registered until shutdown closes ctx.
 	if err := watcher.Add(manager.configPath); err != nil {
-		log.Fatal(err)
+		log.Errorf("Failed to watch config file %s: %v (live config reload disabled)", manager.configPath, err)
 	}
 }
 

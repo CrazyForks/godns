@@ -251,6 +251,14 @@ func (helper *IPHelper) getCurrentIP() {
 	var err error
 	var ip string
 
+	// reqURLs is mutated under helper.mutex by UpdateConfiguration; reading
+	// its length here without the lock is a race the detector flags. Read
+	// under the read lock and release before any work — sub-calls take
+	// their own locks (getNext uses RLock, setCurrentIP uses Lock).
+	helper.mutex.RLock()
+	hasURLs := len(helper.reqURLs) > 0
+	helper.mutex.RUnlock()
+
 	if helper.configuration.Mikrotik.Enabled {
 		ip = helper.getIPFromMikrotik()
 		if ip == "" {
@@ -261,7 +269,7 @@ func (helper *IPHelper) getCurrentIP() {
 		}
 	}
 
-	if len(helper.reqURLs) > 0 {
+	if hasURLs {
 		ip = helper.getIPOnline()
 		if ip == "" {
 			log.Error("get ip online failed. Fallback to get ip from interface if possible.")
